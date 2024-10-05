@@ -10,7 +10,13 @@ std::default_random_engine eng(rd());
 
 #define SCREEN_WIDTH 920 
 #define SCREEN_HEIGHT 800
-#define ENTITY_AMOUNT 30
+#define ENTITY_AMOUNT 20000
+#define ENTITY_RADIUS 3
+#define ENTITY_SPEED 150.0f
+
+
+Vector2 g_mousePos;
+bool g_isHoldingLMB;
 
 Vector2 operator+(Vector2 lhs, Vector2 rhs){
   return Vector2{lhs.x+rhs.x, lhs.y+rhs.y};
@@ -24,10 +30,14 @@ Vector2 operator*(Vector2 lhs, float rhs){
   return Vector2{lhs.x*rhs, lhs.y * rhs};
 }
 
+Vector2 operator/(Vector2 lhs, float rhs){
+  return Vector2{lhs.x/rhs, lhs.y/rhs};
+}
+
 Vector2 GetRandomVector2(){
-  std::uniform_real_distribution<float> distrX(0, SCREEN_WIDTH);
+  std::uniform_real_distribution<float> distrX(0, SCREEN_WIDTH-ENTITY_RADIUS);
   float x = distrX(eng); 
-  std::uniform_real_distribution<float> distrY(0, SCREEN_HEIGHT);
+  std::uniform_real_distribution<float> distrY(0, SCREEN_HEIGHT-ENTITY_RADIUS);
   float y = distrY(eng);
   return Vector2{(float)x,(float)y};
 }
@@ -38,14 +48,24 @@ class Entity{
     Entity(){
       this->position = GetRandomVector2();
     }
-    void Move(Vector2 attractionPos){
-      Vector2 distance = attractionPos-this->position;
-      Vector2 dir = Vector2Normalize(distance);
-      /*position = position + dir * (Vector2Length(distance)); */
-      position = position + dir;
+    void Move(){
+      Vector2 distanceVec = g_mousePos-this->position;
+      Vector2 dir = Vector2Normalize(distanceVec);
+      float distance = Vector2Length(distanceVec);
+
+      if(g_isHoldingLMB){
+        distance = -distance;
+      }
+
+      if(abs(distance) > 2.0f){
+        Vector2 velocity;
+        velocity = (dir / distance) * ENTITY_SPEED;
+        position = position + velocity;
+      }
+      
     }
   private:
-
+    /*Vector2 m_velocity;*/
 };
 
 int main(void)
@@ -56,10 +76,8 @@ int main(void)
       entities[i] = Entity();
     }
 
-    const int screenWidth = 800;
-    const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "Gravity");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Gravity");
 
     SetTargetFPS(60);
 
@@ -77,10 +95,12 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            Vector2 mousePos = GetMousePosition();
+            g_mousePos = GetMousePosition();
+            g_isHoldingLMB = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+
             for(int i = 0; i < ENTITY_AMOUNT; i++){
-              DrawCircleV(entities[i].position, 20, BLACK);
-              entities[i].Move(mousePos);
+              DrawCircleV(entities[i].position, ENTITY_RADIUS, BLACK);
+              entities[i].Move();
             }
 
         EndDrawing();
