@@ -10,13 +10,9 @@ std::default_random_engine eng(rd());
 
 #define SCREEN_WIDTH 920 
 #define SCREEN_HEIGHT 800
-#define ENTITY_AMOUNT 20000
-#define ENTITY_RADIUS 3
-#define ENTITY_SPEED 150.0f
-
-
-Vector2 g_mousePos;
-bool g_isHoldingLMB;
+#define ENTITY_AMOUNT 8000
+#define ENTITY_RADIUS 7
+#define ENTITY_SPEED 100.0f
 
 Vector2 operator+(Vector2 lhs, Vector2 rhs){
   return Vector2{lhs.x+rhs.x, lhs.y+rhs.y};
@@ -42,9 +38,18 @@ Vector2 GetRandomVector2(){
   return Vector2{(float)x,(float)y};
 }
 
+class Entity;
+
+Vector2 g_mousePos;
+bool g_isHoldingLMB;
+
+std::vector<Entity> g_entities(ENTITY_AMOUNT);
+
 class Entity{
   public:
     Vector2 position;
+    Vector2 velocity;
+    Color color = BLACK;
     Entity(){
       this->position = GetRandomVector2();
     }
@@ -58,26 +63,29 @@ class Entity{
       }
 
       if(abs(distance) > 2.0f){
-        Vector2 velocity;
+
+        //blue gradient value mapping 
+        float c = ((distance)/1500) * 255;
+        unsigned char b = 255-(int)c;
+        color = Color{0,0,b,255};
+
         velocity = (dir / distance) * ENTITY_SPEED;
         position = position + velocity;
       }
-      
     }
+
   private:
-    /*Vector2 m_velocity;*/
 };
 
 int main(void)
 {
 
-    Entity entities[ENTITY_AMOUNT];
     for(int i = 0; i < ENTITY_AMOUNT; i++){
-      entities[i] = Entity();
+      g_entities[i] = Entity();
     }
 
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Gravity");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Particle attraction");
 
     SetTargetFPS(60);
 
@@ -93,15 +101,15 @@ int main(void)
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-            ClearBackground(RAYWHITE);
+          ClearBackground(RAYWHITE);
 
-            g_mousePos = GetMousePosition();
-            g_isHoldingLMB = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+          g_mousePos = GetMousePosition();
+          g_isHoldingLMB = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
 
-            for(int i = 0; i < ENTITY_AMOUNT; i++){
-              DrawCircleV(entities[i].position, ENTITY_RADIUS, BLACK);
-              entities[i].Move();
-            }
+          for(int i = 0; i < ENTITY_AMOUNT; i++){
+            DrawCircleV(g_entities[i].position, ENTITY_RADIUS, g_entities[i].color);
+            g_entities[i].Move();
+          }
 
         EndDrawing();
         //----------------------------------------------------------------------------------
